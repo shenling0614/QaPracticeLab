@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job application — QA Practice Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">QA Practice Lab</p>
+    <h1>Apply for a QA role</h1>
+    <p class="lede">
+      Submit an application. Required fields must be valid. An email that already
+      applied is rejected.
+    </p>
+
+    <form id="application-form" class="card" novalidate>
+      <div class="field">
+        <label for="full-name">Full name</label>
+        <input type="text" id="full-name" name="fullName" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="" disabled selected>Select a role</option>
+          <option value="qa-engineer">QA Engineer</option>
+          <option value="qa-lead">QA Lead</option>
+          <option value="sdet">SDET</option>
+        </select>
+      </div>
+
+      <button type="submit">Submit application</button>
+    </form>
+
+    <div id="feedback" hidden></div>
+  </main>
+
+  <script>
+    const ALREADY_APPLIED_EMAIL = 'applied@example.com';
+    const form = document.getElementById('application-form');
+    const feedback = document.getElementById('feedback');
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    function showFeedback(messages, type) {
+      feedback.hidden = false;
+      feedback.className = type;
+      feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      feedback.replaceChildren();
+      for (const text of messages) {
+        const line = document.createElement('p');
+        line.textContent = text;
+        feedback.appendChild(line);
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const fullName = document.getElementById('full-name').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const role = document.getElementById('role').value;
+      const errors = [];
+
+      if (!fullName) {
+        errors.push('Full name is required');
+      }
+      if (!email) {
+        errors.push('Email is required');
+      } else if (!isValidEmail(email)) {
+        errors.push('Enter a valid email');
+      }
+      if (!role) {
+        errors.push('Role is required');
+      }
+
+      if (errors.length) {
+        showFeedback(errors, 'error');
+        return;
+      }
+
+      if (email === ALREADY_APPLIED_EMAIL) {
+        showFeedback(['An application with this email already exists'], 'error');
+        return;
+      }
+
+      showFeedback(['Application submitted. Confirmation QA-1001'], 'success');
+    });
+  </script>
+</body>
+</html>
