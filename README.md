@@ -1,71 +1,90 @@
 # QA Practice Lab
 
-A small job-application page plus Playwright tests. Week 3: **tests run in GitHub Actions**, not only on this PC.
+A job-application page with **risk-based Playwright tests** that run on every push in GitHub Actions.
+
+The product is small on purpose. The portfolio point is **what I chose to test, what I skipped, and that CI—not my laptop—is the real run.**
 
 [![Playwright](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml/badge.svg)](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml)
 
-The badge turns green after the first successful run on GitHub. If the repo name on GitHub is different, change `QaPracticeLab` in that URL.
-
-## How to run locally
+## How to run
 
 ```powershell
+git clone https://github.com/shenling0614/QaPracticeLab.git
 cd QaPracticeLab
 npm install
 npx playwright install chromium
 npm test
 ```
 
-The tests start a local server on port `4173`. Open the app at [http://127.0.0.1:4173](http://127.0.0.1:4173).
+Tests start a local server on port `4173`. Open the app: [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
-If a test fails locally, open the report:
+If a test fails:
 
 ```powershell
 npm run test:report
 ```
 
-Click the failed test, then **trace**.
+Open the failed test, then **trace**. Debug from the trace; do not re-run until it happens to pass.
 
-## CI (GitHub Actions)
+## What I tested (and why)
 
-This is the same idea as Jenkins regression at Ericsson: a pipeline on a clean machine, not your laptop.
-
-| Piece | Where |
-|---|---|
-| Pipeline file | `.github/workflows/playwright.yml` |
-| When it runs | Every push and pull request to `main` |
-| What it does | `npm ci` → install Chromium → `npx playwright test` |
-| Secrets | None. This app has no passwords or API keys. |
-| Report | Actions → the run → **playwright-report** artifact |
-| Traces | Uploaded only when tests **fail** (`test-results`) |
-
-A failed job is useful. Download the report artifact, unzip it, run `npx playwright show-report` in that folder (or open `index.html`), and read the trace the same way as Week 2.
-
-## What I chose to test (and why)
-
-Eight UI tests. Each one has a reason to exist. I did **not** add a separate success test per role.
+Eight UI tests. Each exists for a risk. There is **no** extra success test per role (QA Engineer vs QA Lead vs SDET is the same path).
 
 | Test | Risk |
 |---|---|
-| Valid submit shows confirmation `QA-1001` | Happy path must work |
-| Empty form shows all required messages | Clicking Submit with nothing filled must not succeed |
+| Valid submit → confirmation `QA-1001` | Happy path must work |
+| Empty form → all required messages | Submit with nothing filled must not succeed |
 | Missing name + invalid email | Two client errors at once; still no confirmation |
 | Whitespace-only name | Spaces are not a name (`trim`) |
 | Role not selected | Incomplete application must fail |
 | Duplicate email `applied@example.com` | Already-applied must fail |
-| Duplicate email with different letter case | `Applied@Example.com` is the same person |
+| Duplicate email, different letter case | `Applied@Example.com` is the same person |
 | Fix validation errors, then succeed | An error must not trap the form |
 
-What I did **not** automate yet: accessibility or API tests. Those come in later weeks.
+Locators: `getByLabel` and `getByRole` in `tests/fixtures.ts`. Specs describe behavior; the fixture opens `/` and holds locators. No `waitForTimeout`.
+
+## What I did not automate (yet)
+
+- API tests (the page is still client-only; Week 5)
+- Accessibility (Week 9)
+- Every empty-field combination
+- Extra browsers (Chromium only)
+
+Skipping those is a **coverage decision**, not a missing install.
+
+## CI
+
+Same idea as a Jenkins regression job: a clean machine, not this PC.
+
+| Piece | Where |
+|---|---|
+| Pipeline | `.github/workflows/playwright.yml` |
+| When | Push and pull request to `main` |
+| Steps | `npm ci` → Chromium → `npx playwright test` |
+| Secrets | None |
+| Report | Actions → run → artifact **playwright-report** |
+| Traces | Artifact **test-results** only if tests **fail** |
+
+A red run still keeps the code on GitHub. Fix locally, then push; a **new** run starts.
 
 ## Folder map
 
 ```
-index.html                      Job application page
-styles.css                      Page layout
-tests/fixtures.ts               Shared locators and fill helper
-tests/apply.spec.ts             Eight Playwright tests
-playwright.config.ts            Chromium, screenshot + trace on failure, CI retries
-.github/workflows/playwright.yml  GitHub Actions pipeline
+index.html                       Job application page
+styles.css                       Layout
+tests/fixtures.ts                Shared locators + fill helper
+tests/apply.spec.ts              Eight tests
+playwright.config.ts             Chromium, trace/screenshot on failure, CI retries
+.github/workflows/playwright.yml GitHub Actions
 ```
 
-Locators use `getByLabel` and `getByRole`. There is no `waitForTimeout`.
+## 3-minute walkthrough (practice out loud)
+
+Do not read this file in an interview. Use it as a checklist:
+
+1. **What it is** — a form I quality-engineered; green CI on GitHub.
+2. **Happy path** — valid name, email, role → `QA-1001`.
+3. **Why not 50 tests** — one test per risk; I skipped per-role success.
+4. **Fixture** — `goto` and locators live in `fixtures.ts`; specs stay about risk.
+5. **Failure** — Actions artifact + trace, same as a failed Jenkins job.
+6. **Next** — API and accessibility later; I can say what I would add under time pressure.
