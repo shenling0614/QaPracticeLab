@@ -2,6 +2,7 @@
   "name": "qapracticelab",
   "private": true,
   "scripts": {
+    "start": "node server.mjs",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report"

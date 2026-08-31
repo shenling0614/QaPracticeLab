@@ -1,10 +1,10 @@
-import { test, expect, CONFIRMATION, DUPLICATE_MESSAGE } from './fixtures';
+import { test, expect, CONFIRMATION, DUPLICATE_MESSAGE, uniqueEmail } from './fixtures';
 
-test.describe('Job application', () => {
+test.describe('Job application UI', () => {
   test('submits a valid application and shows confirmation', async ({ application, page }) => {
     await application.fill({
       fullName: 'Ling Shen',
-      email: 'ling.shen@example.com',
+      email: uniqueEmail('ling'),
       role: 'QA Engineer',
     });
     await application.submit.click();
@@ -36,7 +36,7 @@ test.describe('Job application', () => {
   test('treats whitespace-only name as empty', async ({ application, page }) => {
     await application.fill({
       fullName: '   ',
-      email: 'ada@example.com',
+      email: uniqueEmail('ada'),
       role: 'SDET',
     });
     await application.submit.click();
@@ -45,34 +45,11 @@ test.describe('Job application', () => {
     await expect(page.getByText(CONFIRMATION)).toBeHidden();
   });
 
-  test('shows an error when role is not selected', async ({ application, page }) => {
-    await application.fill({
-      fullName: 'Ada Lovelace',
-      email: 'ada@example.com',
-    });
-    await application.submit.click();
-
-    await expect(page.getByText('Role is required')).toBeVisible();
-    await expect(page.getByText(CONFIRMATION)).toBeHidden();
-  });
-
-  test('rejects an email that already applied', async ({ application, page }) => {
+  test('shows a duplicate error from the API on the page', async ({ application, page }) => {
     await application.fill({
       fullName: 'Alex Rivera',
       email: 'applied@example.com',
       role: 'SDET',
-    });
-    await application.submit.click();
-
-    await expect(page.getByText(DUPLICATE_MESSAGE)).toBeVisible();
-    await expect(page.getByText(CONFIRMATION)).toBeHidden();
-  });
-
-  test('rejects a duplicate email regardless of letter case', async ({ application, page }) => {
-    await application.fill({
-      fullName: 'Alex Rivera',
-      email: 'Applied@Example.com',
-      role: 'QA Engineer',
     });
     await application.submit.click();
 
@@ -90,7 +67,7 @@ test.describe('Job application', () => {
 
     await application.fill({
       fullName: 'Grace Hopper',
-      email: 'grace.hopper@example.com',
+      email: uniqueEmail('grace'),
     });
     await application.submit.click();
 

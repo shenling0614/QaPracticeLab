@@ -43,7 +43,6 @@
   </main>
 
   <script>
-    const ALREADY_APPLIED_EMAIL = 'applied@example.com';
     const form = document.getElementById('application-form');
     const feedback = document.getElementById('feedback');
 
@@ -63,7 +62,7 @@
       }
     }
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const fullName = document.getElementById('full-name').value.trim();
       const email = document.getElementById('email').value.trim().toLowerCase();
@@ -87,12 +86,19 @@
         return;
       }
 
-      if (email === ALREADY_APPLIED_EMAIL) {
-        showFeedback(['An application with this email already exists'], 'error');
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, role }),
+      });
+      const body = await response.json();
+
+      if (!response.ok) {
+        showFeedback(body.errors, 'error');
         return;
       }
 
-      showFeedback(['Application submitted. Confirmation QA-1001'], 'success');
+      showFeedback([`Application submitted. Confirmation ${body.confirmation}`], 'success');
     });
   </script>
 </body>

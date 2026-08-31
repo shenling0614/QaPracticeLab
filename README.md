@@ -1,8 +1,8 @@
 # QA Practice Lab
 
-A job-application page with **risk-based Playwright tests** that run on every push in GitHub Actions.
+A job-application page with **risk-based Playwright tests** (UI + API) that run on every push in GitHub Actions.
 
-The product is small on purpose. The portfolio point is **what I chose to test, what I skipped, and that CI—not my laptop—is the real run.**
+The product is small on purpose. The portfolio point is **what I chose to test at which layer, what I skipped, and that CI—not my laptop—is the real run.**
 
 [![Playwright](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml/badge.svg)](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml)
 
@@ -16,7 +16,9 @@ npx playwright install chromium
 npm test
 ```
 
-Tests start a local server on port `4173`. Open the app: [http://127.0.0.1:4173](http://127.0.0.1:4173).
+Tests start `node server.mjs` on port `4173`. Open the app: [http://127.0.0.1:4173](http://127.0.0.1:4173).
+
+To run the app without tests: `npm start`.
 
 If a test fails:
 
@@ -26,29 +28,50 @@ npm run test:report
 
 Open the failed test, then **trace**. Debug from the trace; do not re-run until it happens to pass.
 
+## API vs UI (why a check lives where it does)
+
+`POST /api/applications` is the source of truth for create, validation, and duplicate email. The browser only adds what the user **sees**.
+
+| Layer | What belongs there |
+|---|---|
+| **API** (`tests/api.spec.ts`) | Status codes, error lists, duplicate/`trim`/role rules without a browser |
+| **UI** (`tests/apply.spec.ts`) | Messages on the page, client validation before submit, one E2E success, one E2E duplicate (API error rendered) |
+
+I moved duplicate letter-case and “role omitted” **off the UI suite**. Empty form still covers “Role is required” on screen. Case-insensitive duplicate is an API rule.
+
 ## What I tested (and why)
 
-Eight UI tests. Each exists for a risk. There is **no** extra success test per role (QA Engineer vs QA Lead vs SDET is the same path).
+### API
 
 | Test | Risk |
 |---|---|
-| Valid submit → confirmation `QA-1001` | Happy path must work |
-| Empty form → all required messages | Submit with nothing filled must not succeed |
-| Missing name + invalid email | Two client errors at once; still no confirmation |
-| Whitespace-only name | Spaces are not a name (`trim`) |
-| Role not selected | Incomplete application must fail |
-| Duplicate email `applied@example.com` | Already-applied must fail |
-| Duplicate email, different letter case | `Applied@Example.com` is the same person |
+| `201` + confirmation `QA-1001` | Create must work |
+| `400` missing name, email, role | Contract for empty body |
+| `400` invalid email | Format is enforced on the server |
+| `400` whitespace-only name | `trim` is not only a UI trick |
+| `400` missing role | Incomplete payload must fail |
+| `409` `applied@example.com` | Already-applied |
+| `409` `Applied@Example.com` | Same person, different case |
+
+### UI
+
+| Test | Risk |
+|---|---|
+| Valid submit → confirmation | E2E smoke (browser + API) |
+| Empty form → all required messages | Client validation; no API call |
+| Missing name + invalid email | Two messages on screen |
+| Whitespace-only name | Client `trim` |
+| Duplicate email shown on the page | UI displays the API `409` |
 | Fix validation errors, then succeed | An error must not trap the form |
 
-Locators: `getByLabel` and `getByRole` in `tests/fixtures.ts`. Specs describe behavior; the fixture opens `/` and holds locators. No `waitForTimeout`.
+Locators: `getByLabel` and `getByRole` in `tests/fixtures.ts`. Success tests use `uniqueEmail()` so parallel runs do not collide in the in-memory store. No `waitForTimeout`.
 
 ## What I did not automate (yet)
 
-- API tests (the page is still client-only; Week 5)
 - Accessibility (Week 9)
 - Every empty-field combination
 - Extra browsers (Chromium only)
+- Auth, persistence, or a real database (emails live in server memory)
 
 Skipping those is a **coverage decision**, not a missing install.
 
@@ -70,21 +93,21 @@ A red run still keeps the code on GitHub. Fix locally, then push; a **new** run 
 ## Folder map
 
 ```
-index.html                       Job application page
+server.mjs                       Static page + POST /api/applications
+index.html                       Job application form (calls the API)
 styles.css                       Layout
-tests/fixtures.ts                Shared locators + fill helper
-tests/apply.spec.ts              Eight tests
-playwright.config.ts             Chromium, trace/screenshot on failure, CI retries
+tests/fixtures.ts                UI locators + fill helper
+tests/apply.spec.ts              UI tests
+tests/api.spec.ts                Playwright request tests
+playwright.config.ts             Chromium, trace on failure, starts server.mjs
 .github/workflows/playwright.yml GitHub Actions
 ```
 
 ## 3-minute walkthrough (practice out loud)
 
-Do not read this file in an interview. Use it as a checklist:
-
-1. **What it is** — a form I quality-engineered; green CI on GitHub.
-2. **Happy path** — valid name, email, role → `QA-1001`.
-3. **Why not 50 tests** — one test per risk; I skipped per-role success.
-4. **Fixture** — `goto` and locators live in `fixtures.ts`; specs stay about risk.
-5. **Failure** — Actions artifact + trace, same as a failed Jenkins job.
-6. **Next** — API and accessibility later; I can say what I would add under time pressure.
+1. **What it is** — a form plus an API; green CI on GitHub.
+2. **Layering** — duplicate and status codes are API tests; the page is for what the user sees.
+3. **Happy path** — UI smoke + API `201`.
+4. **Fixture** — `goto` and locators in `fixtures.ts`.
+5. **Failure** — Actions artifact + trace.
+6. **Next** — accessibility, not another UI happy path.
