@@ -4,6 +4,8 @@ A job-application page with **risk-based Playwright tests** (UI + API) that run 
 
 The product is small on purpose. The portfolio point is **what I chose to test at which layer, what I skipped, and that CI—not my laptop—is the real run.**
 
+Test strategy (scope, risks, entry/exit, skip list): [docs/Test-Strategy.pptx](docs/Test-Strategy.pptx).
+
 [![Playwright](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml/badge.svg)](https://github.com/shenling0614/QaPracticeLab/actions/workflows/playwright.yml)
 
 ## How to run
@@ -96,6 +98,7 @@ A red run still keeps the code on GitHub. Fix locally, then push; a **new** run 
 server.mjs                       Static page + POST /api/applications
 index.html                       Job application form (calls the API)
 styles.css                       Layout
+docs/Test-Strategy.pptx            Scope, product/test/CI architecture, risks, go/no-go
 tests/fixtures.ts                UI locators + fill helper
 tests/apply.spec.ts              UI tests
 tests/api.spec.ts                Playwright request tests
@@ -106,8 +109,8 @@ playwright.config.ts             Chromium, trace on failure, starts server.mjs
 ## 3-minute walkthrough (practice out loud)
 
 1. **What it is** — a form plus an API; green CI on GitHub.
-2. **Layering** — duplicate and status codes are API tests; the page is for what the user sees.
-3. **Happy path** — UI smoke + API `201`.
-4. **Fixture** — `goto` and locators in `fixtures.ts`.
-5. **Failure** — Actions artifact + trace.
-6. **Next** — accessibility, not another UI happy path.
+2. **Strategy** — `docs/Test-Strategy.pptx`: risks, API vs UI, what we skip.
+3. **Layering** — duplicate and status codes are API tests; the page is for what the user sees.
+4. **Happy path** — UI smoke + API `201`.
+5. **Fixture** — `goto` and locators in `fixtures.ts`.
+6. **Failure** — Actions artifact + trace. Go/no-go is in the strategy exit criteria.
